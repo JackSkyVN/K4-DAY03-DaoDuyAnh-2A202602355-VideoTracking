@@ -1,0 +1,10 @@
+﻿{
+    "annotator":  "DaoDuyAnh-2A202602355",
+    "created_at":  "2026-09-15T14:50:23+07:00",
+    "file":  "evidence/pre-gold/clip_01/gt.txt",
+    "clip":  "clip_01",
+    "version":  "1.0",
+    "size_bytes":  37371,
+    "note":  "Snapshot doc lap truoc khi xem gold/model. Tao bang tay theo huong dan SUBMISSION.md.",
+    "sha256":  "564e9ab39e4274df48c8c3468fc32b5ea2f857b3e452da831bff8756d884ca2f"
+}
