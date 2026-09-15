@@ -137,7 +137,7 @@ Bạn sẽ sửa gì trong `GUIDELINE_MINI.md`, và đổi gì trong quy trình 
 
 - [x] `annotations/clip_01/gt.txt`
 - [x] `annotations/clip_02/gt.txt`
-- [x] `GUIDELINE_MINI.md` đã điền *(một phần)*
+- [x] `GUIDELINE_MINI.md` đã điền
 - [x] `outputs/eval_vs_gold.json`
 - [x] `outputs/model_clip_01.txt`
 - [x] `outputs/eval_model_vs_gold.json`, `outputs/eval_model_vs_me.json`
