@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Hướng dẫn end-to-end Lab Day 3: CVAT Track Mode, MOT 1.1, QC, lock, evaluation và ByteTrack versus ReID.">
+  <title>Day 3 E2E | Video Tracking Data Lab</title>
+  <link rel="stylesheet" href="assets/guide/guide.css">
+  <script src="assets/guide/guide.js" defer></script>
+</head>
+<body data-role="learner">
+  <a class="skip-link" href="#main-content">Đi tới nội dung chính</a>
+  <header class="site-header">
+    <a class="wordmark" href="#top" aria-label="Về đầu trang"><span>DAY 03 · E2E</span><strong>TRACK ID</strong></a>
+    <nav class="primary-nav" aria-label="Điều hướng chính"><a href="#preflight">Chuẩn bị</a><a href="#cvat-e2e">CVAT</a><a href="#quality">QC</a><a href="#notebook">Notebook</a><a href="#submit">Nộp bài</a></nav>
+    <button class="print-button" type="button" data-print>In hướng dẫn</button>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow">CVAT → MOT → QC → LOCK → EVAL → MODEL</p>
+        <h1>Một chiếc xe.<br>Một ID.</h1>
+        <p class="hero-lede">Hướng dẫn thao tác thật từ 60 JPEG warm-up đến bản nộp có bằng chứng trước và sau sửa.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#preflight">Bắt đầu 4 giờ</a>
+
+        </div>
+      </div>
+      <aside class="run-card" aria-label="Bằng chứng lần chạy thật">
+        <div class="run-card-top"><span>ACTUAL RUN</span><strong>LOCAL CVAT 2.74.1</strong></div>
+        <dl><div><dt>Task</dt><dd>D03-V2-CLIP02-SMOKE</dd></div><div><dt>Sequence</dt><dd>60 frame</dd></div><div><dt>Reference</dt><dd>6 track</dd></div><div><dt>Round-trip</dt><dd>MOT 1.1</dd></div></dl>
+        <p><i></i> Create · Import · Save · Export đã chạy thật</p>
+      </aside>
+    </section>
+
+
+
+    <nav class="artifact-rail" aria-label="Mở nhanh tài liệu và mẫu">
+      <a href="CVAT_SETUP.md"><span>01</span>CVAT setup</a><a href="CVAT_TASK_SPEC.md"><span>02</span>Task specification</a><a href="docs/day3-reid-theory.md"><span>03</span>ReID theory</a><a href="notebooks/day3_tracking_yolo_bytetrack.ipynb"><span>04</span>Notebook</a><a href="reports/REVIEW_PARTNER_TEMPLATE.md"><span>05</span>Reviewer checklist</a><a href="reports/REPORT_TEMPLATE.md"><span>06</span>Report template</a><a href="RUBRIC.md"><span>07</span>Rubric</a><a href="#submission-checklist"><span>08</span>Kiểm file nộp</a>
+    </nav>
+
+    <section class="preflight section-pad" id="preflight" aria-labelledby="preflight-title">
+      <div class="section-heading"><p class="section-code">0–15 PHÚT · STOP GATE</p><h2 id="preflight-title">Đúng task rồi mới vẽ.</h2><p>Core không yêu cầu viết code. Sai một mục dưới đây thì dừng và báo Lab Coach.</p></div>
+      <div class="preflight-grid"><div class="check-panel"><h3>Preflight</h3><label><input type="checkbox" data-progress> CVAT mở được, Save icon hoạt động</label><label><input type="checkbox" data-progress> Warm-up là <code>clip_02</code>, 60 frame</label><label><input type="checkbox" data-progress> Core là <code>clip_01</code>, 190 frame</label><label><input type="checkbox" data-progress> Chỉ có Rectangle label <code>vehicle</code></label><label><input type="checkbox" data-progress> Đã chọn <strong>Track</strong>, không phải Shape</label><div class="progress-meter" aria-live="polite"><span>Tiến độ preflight</span><strong data-progress-label>0/5</strong><i><b data-progress-bar></b></i></div></div><aside class="stop-rule"><strong>STOP RULE</strong><h3>Sai một mục thì dừng.</h3><p>Không thêm label/attribute, không đổi thứ tự frame và không chạy model để gợi ý box.</p><a href="CVAT_TASK_SPEC.md">Mở task specification</a></aside></div>
+
+    </section>
+
+    <section class="clip-lab section-pad" id="practice" aria-labelledby="clips-title">
+      <div class="section-heading wide-heading"><p class="section-code">XEM TRƯỚC KHI VẼ</p><h2 id="clips-title">Warm-up ngắn. Core 15 giây.</h2><p>Xem một lượt, chỉ ra xe vào/ra, đoạn che khuất và nơi hai xe cắt nhau.</p></div>
+      <div class="clip-layout"><figure class="clip-feature"><video controls preload="metadata" poster="assets/guide/clip-01-poster.jpg"><source src="assets/guide/clip-01-preview.mp4" type="video/mp4">Trình duyệt không phát được MP4.</video><figcaption><div><span>CORE · CLIP_01</span><strong>15.2 giây · 190 frame · tối thiểu 6 track hợp lệ</strong></div><p>Gán độc lập; phải có ca occlusion và entry/exit. Số track teaching reference chỉ mở sau pre-gold lock.</p></figcaption></figure><div class="clip-support"><figure><video controls preload="metadata" poster="assets/guide/clip-02-poster.jpg"><source src="assets/guide/clip-02-preview.mp4" type="video/mp4"></video><figcaption><strong>Warm-up · clip_02</strong><span>4.8 giây · 60 frame · 6 track</span></figcaption></figure><article class="stop-rule"><strong>ONE STANDARD</strong><h3>Ba mức hỗ trợ</h3><p><b>Non-tech:</b> từng bước. <b>Kinh nghiệm:</b> core tự chủ. <b>Xong sớm:</b> stretch sau core. Cùng rubric.</p></article></div></div>
+    </section>
+
+    <section class="lab-timeline section-pad" aria-labelledby="timeline-title">
+      <div class="timeline-heading"><div class="section-heading"><p class="section-code">240 PHÚT · CÓ NGHỈ 10 PHÚT</p><h2 id="timeline-title">Không đảo thứ tự.</h2></div><p>Warm-up bắt lỗi công cụ. Lock giữ tính độc lập. Model luôn chạy cuối.</p></div>
+      <ol class="schedule"><li><time>00–15</time><div><b>A</b><h3>Preflight</h3><p>Task, schema, Track.</p></div></li><li><time>15–45</time><div><b>B</b><h3>Warm-up</h3><p>60 frame, export.</p></div></li><li><time>45–90</time><div><b>C1</b><h3>Core sprint</h3><p>Identity trước.</p></div></li><li class="break-slot"><time>90–100</time><div><b>BREAK</b><h3>Nghỉ 10 phút</h3><p>Save, reload, rời màn hình.</p></div></li><li><time>100–135</time><div><b>C2</b><h3>Core finish</h3><p>Outside, midpoint.</p></div></li><li><time>135–155</time><div><b>D</b><h3>QC + peer</h3><p>3 lượt, frame–ID–fix.</p></div></li><li><time>155–165</time><div><b>LOCK</b><h3>Pre-gold</h3><p>Snapshot + SHA-256.</p></div></li><li><time>165–195</time><div><b>E</b><h3>Eval + rework</h3><p>Before/after.</p></div></li><li><time>195–225</time><div><b>F</b><h3>Control + ReID</h3><p>ByteTrack vs appearance.</p></div></li><li><time>225–237</time><div><b>REPORT</b><h3>Artifact check</h3><p>Không placeholder.</p></div></li><li><time>237–240</time><div><b>CLOSE</b><h3>Nộp bài</h3><p>Commit cuối.</p></div></li></ol>
+    </section>
+
+    <section class="real-run section-pad" id="cvat-e2e" tabindex="-1" aria-labelledby="cvat-title">
+      <div class="section-heading wide-heading"><p class="section-code">CVAT E2E · ẢNH CHỤP THAO TÁC THẬT</p><h2 id="cvat-title">Từ JPEG đến MOT 1.1.</h2><p>Ảnh được chụp từ local CVAT 2.74.1 và task smoke 60 frame. Bấm ảnh để phóng to; luôn có nút quay lại.</p></div>
+      <aside class="evidence-banner"><strong>Evidence boundary</strong><p>Ảnh chứng minh đường thao tác chạy được. Quyết định semantic vẫn theo task specification và reviewer checklist.</p></aside>
+
+      <article class="procedure-step" id="cvat-create"><div class="procedure-copy"><span class="step-number">01</span><div><h3>Tạo Task và upload sequence</h3><ol><li>Tasks → + → Create a new task.</li><li>Name: <code>D03-CLIP02-&lt;MSSV&gt;</code> cho warm-up.</li><li>Labels → Add label → <code>vehicle</code> → Continue.</li><li>Select files → My computer → chọn toàn bộ JPEG trong <code>img1/</code>.</li><li>Submit &amp; Open. Không upload <code>gt.txt</code>.</li></ol><div class="expected"><b>PASS</b><span>Task mở được; file đầu là <code>000001.jpg</code>.</span></div><div class="recover"><b>Nếu sai</b><span>Xóa task vừa tạo và làm lại. Không rename thủ công để đổi thứ tự.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-create" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-create-task-actual.png" alt="CVAT thật đang tạo task, nhập vehicle và chọn vùng upload" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL CVAT · CREATE TASK</span><strong>Name, vehicle, Select files</strong></figcaption></figure></article>
+
+      <article class="procedure-step procedure-step-flipped" id="cvat-verify-task"><div class="procedure-copy"><span class="step-number">02</span><div><h3>Kiểm task trước khi annotate</h3><ol><li>Trang Task chỉ có label <code>vehicle</code>.</li><li>Warm-up hiện Frame count: <strong>60</strong>, range <strong>0–59</strong>.</li><li>Core hiện 190 frame, range 0–189.</li><li>Sai thứ tự hoặc số frame thì dừng.</li></ol><div class="expected"><b>PASS</b><span>Task smoke thật hiển thị 60 frame, 100% và vehicle.</span></div><div class="recover"><b>Nếu sai</b><span>Đối chiếu <code>seqinfo.ini</code> và số JPEG trước khi vẽ.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-task" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-task-60frames-actual.png" alt="Task CVAT thật hiển thị vehicle, 60 frame và range 0 đến 59" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL TASK · SAU UPLOAD</span><strong>vehicle · 60 frame · 0–59</strong></figcaption></figure></article>
+
+      <article class="procedure-step" id="cvat-track"><div class="procedure-copy"><span class="step-number">03</span><div><h3>Rectangle → Track</h3><ol><li>Bấm Rectangle ở thanh trái.</li><li>Giữ By 2 Points, label <code>vehicle</code>.</li><li>Bấm <strong>Track</strong>, không bấm Shape.</li><li>Kéo bbox quanh phần xe nhìn thấy.</li></ol><div class="expected"><b>PASS</b><span>Sidebar ghi <strong>RECTANGLE TRACK</strong> và có ID.</span></div><div class="recover"><b>FAIL: SHAPE</b><span>Xóa shape và vẽ lại bằng Track. Export YOLO không giữ ID.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-track" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-track-vs-shape-actual.png" alt="Menu Rectangle CVAT thật có hai nút Shape và Track" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL MENU · RECTANGLE</span><strong>Bấm Track ở hàng dưới</strong></figcaption></figure></article>
+
+      <article class="procedure-step procedure-step-flipped" id="cvat-keyframe"><div class="procedure-copy"><span class="step-number">04</span><div><h3>Keyframe và interpolation</h3><ol><li>Làm xong một xe rồi mới sang xe khác.</li><li>Đổi hướng, scale, tốc độ hoặc occlusion: click bbox và chỉnh.</li><li>Ngôi sao sáng là keyframe.</li><li>Kiểm midpoint giữa hai keyframe xa nhất.</li><li>Nếu drift, thêm keyframe trước và sau điểm lệch.</li></ol><div class="expected"><b>PASS</b><span>Cùng ID ở hai đầu và midpoint; box không trượt sang xe khác.</span></div><div class="recover"><b>Nếu ảnh bị pan</b><span>Bbox chưa active. Click thẳng bbox rồi mới kéo handle.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-keyframe" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-keyframe-controls-actual.png" alt="CVAT frame 31 với ID 1 được chọn và keyframe active" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL FRAME 31 · KEYFRAME</span><strong>ID 1 selected · ngôi sao sáng</strong></figcaption></figure></article>
+
+      <article class="procedure-step" id="cvat-occluded"><div class="procedure-copy"><span class="step-number">05</span><div><h3>Occluded khi xe còn trong cảnh</h3><ol><li>Chọn đúng ID ở frame bị che.</li><li>Bấm nút người trong track item hoặc phím <code>Q</code>.</li><li>Giữ ID cũ nếu xe hiện lại trong dưới 25 frame.</li><li>Bbox chỉ ôm phần nhìn thấy.</li></ol><div class="expected"><b>PASS</b><span>Tooltip ghi <strong>Switch occluded property [Q, /]</strong>; ID không đổi.</span></div><div class="recover"><b>Đừng dùng Outside</b><span>Outside nghĩa là xe không còn bbox ở frame đó.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-occluded" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-occluded-toggle-actual.png" alt="CVAT thật hiển thị tooltip Switch occluded property trên track ID 1" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL CONTROL · OCCLUDED</span><strong>Tooltip phím Q</strong></figcaption></figure></article>
+
+      <article class="procedure-step procedure-step-flipped" id="cvat-outside"><div class="procedure-copy"><span class="step-number">06</span><div><h3>Outside ở frame đầu xe vắng mặt</h3><ol><li>Kiểm bbox tại frame cuối còn thấy xe.</li><li>Sang đúng một frame, nơi xe biến mất.</li><li>Bấm Outside hoặc phím <code>O</code>.</li><li>Xe quay lại sau khi đã ra khung: tạo track mới.</li></ol><div class="expected"><b>PASS</b><span>Tooltip ghi <strong>Switch outside property [O]</strong>; không còn box treo.</span></div><div class="recover"><b>Nếu kết thúc sớm</b><span>Tắt Outside tại frame sai rồi đặt lại đúng frame.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-outside" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-outside-toggle-actual.png" alt="CVAT thật hiển thị tooltip Switch outside property phím O" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL CONTROL · OUTSIDE</span><strong>Tooltip phím O</strong></figcaption></figure></article>
+
+      <article class="procedure-step" id="cvat-save"><div class="procedure-copy"><span class="step-number">07</span><div><h3>Save, reload, rồi mới tin</h3><ol><li>Bấm Save icon trên toolbar.</li><li>Không chỉ dựa vào <code>Ctrl+S</code>.</li><li>Reload Job.</li><li>Tới một frame giữa clip, kiểm Items, ID và bbox vẫn còn.</li></ol><div class="expected"><b>PASS</b><span>Sau reload, sidebar vẫn ghi RECTANGLE TRACK và ID cũ.</span></div><div class="recover"><b>Nếu mất nhãn</b><span>Dừng, không export; báo task/job ID và frame cuối còn nhớ.</span></div></div></div><figure class="actual-shot"><a href="#image-cvat-save" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-save-success-actual.png" alt="CVAT thật sau khi bấm Save, tooltip Save current changes và track còn trong sidebar" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL SAVE · SAU RELOAD</span><strong>Save icon · Items vẫn tồn tại</strong></figcaption></figure></article>
+
+      <article class="procedure-step procedure-step-flipped" id="cvat-export"><div class="procedure-copy"><span class="step-number">08</span><div><h3>Export MOT 1.1</h3><ol><li>Về trang Task, không export từ canvas.</li><li>Actions → Export task dataset.</li><li>Format: <strong>MOT 1.1</strong>; Save images: off.</li><li>Requests phải Finished 100%.</li><li>Chép <code>gt/gt.txt</code> vào <code>annotations/clip_0X/gt.txt</code>.</li></ol><div class="expected"><b>PASS</b><span>Cột 1 bắt đầu frame 1; cột 2 là track ID.</span></div><div class="recover"><b>Không có gt/gt.txt</b><span>Export lại bằng MOT 1.1, không phải YOLO.</span></div></div></div><div class="proof-stack"><figure class="actual-shot"><a href="#image-cvat-export" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-export-mot-actual.png" alt="Dialog CVAT thật chọn MOT 1.1" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL EXPORT DIALOG</span><strong>MOT 1.1 · Save images off</strong></figcaption></figure><figure class="actual-shot"><a href="#image-cvat-finished" aria-haspopup="dialog"><img src="assets/guide/cvat-v2-export-finished-actual.png" alt="Requests CVAT thật báo export MOT 1.1 Finished 100 phần trăm" width="1280" height="720" loading="lazy"></a><figcaption><span>ACTUAL REQUEST</span><strong>Finished · 100%</strong></figcaption></figure></div></article>
+      <div class="audit-result"><div><span>SEQUENCE</span><strong>60</strong></div><div><span>LABEL</span><strong>1</strong></div><div><span>TRACK</span><strong>6</strong></div><div><span>EXPORT</span><strong>PASS</strong></div><p><b>Ghi nhận thực tế:</b> importer CVAT 2.74.1 không nhận <code>frameRate=12.5</code> trong <code>seqinfo.ini</code>; export MOT 1.1 từ task vẫn hoàn tất đúng.</p></div>
+
+    </section>
+
+    <section class="decision-table section-pad" id="worked-examples" aria-labelledby="worked-title">
+      <div class="section-heading wide-heading"><p class="section-code">WORKED DIAGNOSIS · FRAME THẬT</p><h2 id="worked-title">Nhìn dấu hiệu, chọn đúng sửa.</h2><p>Dùng frame 31 của task smoke để đọc control và identity. Các ví dụ sai là triệu chứng cần tìm, không phải đáp án core clip.</p></div>
+      <div class="worked-grid"><article><b>GIỮ ID QUA CHE</b><h3>Đúng</h3><p>ID trước/sau che giống nhau; dùng Occluded, không tạo ID mới.</p><a href="#image-cvat-occluded">Mở control thật</a></article><article><b>ID SWITCH</b><h3>Sai</h3><p>Số trên cùng xe đổi sau crossing. Quay về frame cuối đúng và sửa/merge track.</p><a href="#image-cvat-keyframe">Mở frame nhiều xe</a></article><article><b>TRACK BOUNDARY</b><h3>Đúng</h3><p>Frame cuối còn xe có bbox; frame kế dùng Outside.</p><a href="#image-cvat-outside">Mở Outside thật</a></article><article><b>DRIFT</b><h3>Sai</h3><p>Hai đầu khít nhưng midpoint trượt. Thêm keyframe quanh midpoint.</p><a href="#image-cvat-keyframe">Mở keyframe thật</a></article><article><b>TRƯỚC/SAU</b><h3>Chứng minh</h3><p>Ghi frame, ID, lỗi, thao tác sửa và closure. Lưu visualization cùng frame khi cần.</p><a href="reports/REVIEW_PARTNER_TEMPLATE.md">Mở bảng finding</a></article></div>
+      <div class="index-note"><strong>Frame mapping</strong><p>CVAT UI hiển thị 0–59; MOT dùng 1–60. Ghi cả hai khi có thể nhầm.</p></div>
+    </section>
+
+    <section class="quality-section section-pad" id="quality" aria-labelledby="quality-title">
+      <div class="section-heading"><p class="section-code">135–155 PHÚT</p><h2 id="quality-title">Ba lượt, ba loại lỗi.</h2><p>Mỗi lượt chỉ tìm một loại lỗi để giảm tải nhận thức.</p></div>
+      <div class="qc-layout"><details open><summary><span>LƯỢT 01</span><strong>Identity / timeline</strong><i>＋</i></summary><div>Phát nhanh, mắt chỉ nhìn ID. Bắt ID switch, fragmentation, reuse ID và crossing sai.</div></details><details><summary><span>LƯỢT 02</span><strong>Entry / exit</strong><i>＋</i></summary><div>Đi frame đầu/cuối track. Bắt start muộn, end sớm, box treo do thiếu Outside.</div></details><details><summary><span>LƯỢT 03</span><strong>Geometry / interpolation</strong><i>＋</i></summary><div>Soi midpoint, đổi hướng, đổi scale và occlusion. Bắt bbox drift.</div></details><aside class="error-key"><h3>Peer finding formula</h3><dl><div><dt>Frame</dt><dd>CVAT + MOT nếu lệch</dd></div><div><dt>ID</dt><dd>ID bản peer</dd></div><div><dt>Rule</dt><dd>identity, boundary, geometry</dd></div><div><dt>Fix</dt><dd>hành động + closure</dd></div></dl></aside></div>
+      <div class="finding-example"><table><thead><tr><th>MOT frame</th><th>ID</th><th>Lỗi</th><th>Evidence</th><th>Fix</th><th>Closure</th></tr></thead><tbody><tr><td>31</td><td>4</td><td>bbox drift</td><td>midpoint lệch khỏi phần nhìn thấy</td><td>thêm keyframe trước/sau</td><td><span>fixed</span></td></tr></tbody></table></div>
+      <div class="section-actions"><a class="button button-primary" href="reports/REVIEW_PARTNER_TEMPLATE.md">Mở reviewer checklist</a><a class="button button-secondary" href="GUIDELINE_MINI.md">Mở guideline mini</a></div>
+
+    </section>
+
+    <section class="command-section section-pad" id="commands" aria-labelledby="commands-title">
+      <div class="section-heading wide-heading"><p class="section-code">COPY · PASTE · ĐỌC OUTPUT</p><h2 id="commands-title">Mỗi lệnh có dấu hiệu thoát.</h2><p>Chạy từ thư mục gốc repo. PASS không chứng minh annotation đúng semantic; vẫn phải xem bằng mắt.</p></div>
+      <div class="command-list">
+        <article class="command-card"><header><span>01</span><h3>Kiểm MOT</h3><button type="button" data-copy-target="cmd-check">Sao chép</button></header><pre id="cmd-check"><code>python3 tools/check_mot_labels.py \
+  --clip data/clips/clip_01 \
+  --tracks annotations/clip_01/gt.txt</code></pre><div class="output-guide"><p><b class="status-pass">PASS</b> <code>ĐẠT phần định dạng: 0 lỗi</code>.</p><p><b class="status-warn">WARNING</b> Đọc từng cảnh báo và kiểm bằng mắt.</p><p><b class="status-fail">FAIL</b> <code>KHÔNG ĐẠT</code>: sửa mọi LỖI rồi chạy lại.</p></div></article>
+        <article class="command-card"><header><span>02</span><h3>Visualize track</h3><button type="button" data-copy-target="cmd-vis">Sao chép</button></header><pre id="cmd-vis"><code>python3 -m pip install pillow
+python3 tools/visualize_tracks.py \
+  --clip data/clips/clip_01 \
+  --tracks annotations/clip_01/gt.txt \
+  --out outputs/vis_clip_01</code></pre><div class="output-guide"><p><b class="status-pass">PASS</b> <code>outputs/vis_clip_01/</code> có ảnh bbox + ID.</p><p><b class="status-warn">WARNING</b> ID đổi ở crossing: quay lại CVAT sửa identity.</p><p><b class="status-fail">FAIL</b> <code>No module named PIL</code>: cài Pillow rồi chạy lại.</p></div></article>
+        <article class="command-card"><header><span>03</span><h3>Khóa pre-gold</h3><button type="button" data-copy-target="cmd-lock">Sao chép</button></header><pre id="cmd-lock"><code>python3 tools/lock_pre_gold.py</code></pre><div class="output-guide"><p><b class="status-pass">PASS</b> Thấy <code>ĐÃ KHÓA PRE-GOLD</code>, manifest và SHA-256.</p><p><b class="status-warn">WARNING</b> Gửi hash cho coach, chưa mở reference/model.</p><p><b class="status-fail">FAIL</b> Không xóa evidence; báo coach.</p></div></article>
+        <article class="command-card"><header><span>04</span><h3>Evaluate trước/sau</h3><button type="button" data-copy-target="cmd-eval">Sao chép</button></header><pre id="cmd-eval"><code># Trước rework: snapshot đã khóa
+python3 tools/evaluate_tracking.py \
+  --pred evidence/pre-gold/clip_01/gt.txt \
+  --gt gold/clip_01/gt.txt \
+  --seqinfo data/clips/clip_01/seqinfo.ini \
+  --output outputs/eval_pre_gold.json
+
+# Sau rework: annotation cuối
+python3 tools/evaluate_tracking.py \
+  --pred annotations/clip_01/gt.txt \
+  --gt gold/clip_01/gt.txt \
+  --seqinfo data/clips/clip_01/seqinfo.ini \
+  --output outputs/eval_vs_gold.json</code></pre><div class="output-guide"><p><b class="status-pass">PASS</b> IDF1 ≥ .80, MOTA ≥ .75, MOTP ≥ .70.</p><p><b class="status-warn">WARNING</b> MOTA cao, IDF1 thấp: ưu tiên ID switch/fragmentation.</p><p><b class="status-fail">FAIL</b> Thiếu <code>gold/clip_01/gt.txt</code>: chưa được phát hoặc đặt sai chỗ.</p></div></article>
+        <article class="command-card"><header><span>05</span><h3>Chạy control + ReID</h3><button type="button" data-copy-target="cmd-model">Sao chép</button></header><pre id="cmd-model"><code>python3 -m pip install "ultralytics==8.4.145" "lap==0.5.13"
+# Control: motion + IoU
+python3 tools/run_tracker.py \
+  --clip data/clips/clip_01 \
+  --model yolo26n.pt \
+  --tracker bytetrack.yaml \
+  --out outputs/model_bytetrack_clip_01.txt
+
+# Treatment: appearance/ReID, cùng detector input
+python3 tools/run_tracker.py \
+  --clip data/clips/clip_01 \
+  --model yolo26n.pt \
+  --tracker configs/trackers/botsort-reid.yaml \
+  --out outputs/model_reid_clip_01.txt</code></pre><div class="output-guide"><p><b class="status-pass">PASS</b> Có hai file MOT, mỗi file có dòng dữ liệu.</p><p><b class="status-warn">WARNING</b> ReID thêm compute; CPU chậm nhưng hợp lệ.</p><p><b class="status-fail">FAIL</b> Treatment lỗi: kiểm <code>configs/trackers/botsort-reid.yaml</code>, rồi dùng notebook route bên dưới.</p></div></article>
+        <article class="command-card" id="submission-checklist"><header><span>06</span><h3>Kiểm submission</h3><button type="button" data-copy-target="cmd-submit">Sao chép</button></header><pre id="cmd-submit"><code>for path in \
+  annotations/clip_01/gt.txt \
+  annotations/clip_02/gt.txt \
+  evidence/pre-gold/clip_01/manifest.json \
+  reports/review_partner.md \
+  reports/REPORT.md \
+  outputs/model_bytetrack_clip_01.txt \
+  outputs/model_reid_clip_01.txt \
+  outputs/model_run_config.json; do
+  test -s "$path" &amp;&amp; echo "PASS $path" || echo "FAIL $path"
+done
+
+if git ls-files | grep -Eq '^(gold/|outputs/vis_)|\.pt$'; then
+  echo "FAIL: đang track gold, visualization hoặc weights"
+else
+  echo "PASS: không track gold/weights/visualization"
+fi</code></pre><div class="output-guide"><p><b class="status-pass">PASS</b> Artifact lines PASS và leak check PASS.</p><p><b class="status-warn">WARNING</b> <code>git status --short</code> còn file đúng phạm vi: add trước commit.</p><p><b class="status-fail">FAIL</b> File rỗng/thiếu hoặc gold/weights đang track.</p></div></article>
+      </div>
+      <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
+
+    </section>
+
+    <section class="reid-explainer section-pad" id="reid-explainer" aria-labelledby="reid-title">
+      <div class="section-heading wide-heading"><p class="section-code">HIỂU TRONG 3 PHÚT · TRƯỚC KHI MỞ NOTEBOOK</p><h2 id="reid-title">Giữ một chiếc xe là một ID.</h2><p>Không cần biết code để hiểu phần này. Hãy nhìn một xe xanh bị xe buýt che: khi nó xuất hiện lại, tracker phải quyết định đó là xe cũ hay một xe mới.</p></div>
+      <div class="reid-story"><figure><img src="assets/guide/reid-occlusion-explainer.png" alt="Minh hoạ xe xanh mang cùng một track đi vào, bị xe buýt che, rồi xuất hiện lại; xe xám là xe khác dễ gây nhầm lẫn" width="1672" height="941" loading="lazy"><figcaption><span>MINH HOẠ KHÁI NIỆM</span><strong>Không phải ảnh từ clip hay kết quả model</strong></figcaption></figure><ol class="reid-moments"><li><b>01</b><div><strong>Trước khi bị che</strong><p>Tracker thấy xe xanh và gán tạm <code>track_id</code>, ví dụ ID 4.</p></div></li><li><b>02</b><div><strong>Khi bị che</strong><p>Xe biến mất sau xe buýt. Tracker chỉ có vị trí và hướng đi dự đoán.</p></div></li><li><b>03</b><div><strong>Khi xuất hiện lại</strong><p>Nó phải chọn: tiếp tục ID 4, hay tạo ID mới / gán nhầm ID xe xám?</p></div></li></ol></div>
+      <div class="reid-plain-grid"><article><span>01 · TRACK ID</span><h3>“Tên tạm” của xe trong video</h3><p>Không phải biển số hay danh tính thật. Một xe giữ cùng ID càng lâu càng tốt.</p></article><article><span>02 · BYTETRACK</span><h3>Nhìn vị trí và chuyển động</h3><p>Nó hỏi: xe cũ dự đoán đang ở đâu, box mới có nằm gần/chồng lên không?</p></article><article><span>03 · ReID</span><h3>Nhìn thêm vẻ ngoài</h3><p>Nó biến crop xe thành đặc trưng hình ảnh rồi hỏi: xe vừa hiện lại có giống xe ID 4 không?</p></article><article><span>04 · ID SWITCH</span><h3>Lỗi đổi nhầm “tên”</h3><p>Cùng một xe đang ID 4, sau đoạn che lại thành ID 9 — bbox có thể vẫn đúng nhưng identity sai.</p></article></div>
+      <div class="metric-plain"><div><p class="section-code">ĐỌC METRIC KHÔNG CẦN CÔNG THỨC</p><h3>Nhìn đúng thứ tự.</h3><p>Đừng chỉ xem một con số hoặc chọn model có điểm cao hơn.</p></div><dl><div><dt>IDF1</dt><dd>Model giữ đúng ID của xe xuyên video tốt đến đâu. Cao hơn thường tốt hơn.</dd></div><div><dt>IDSW</dt><dd>Đếm số lần tracker đổi nhầm ID. Ít hơn thường tốt hơn.</dd></div><div><dt>HOTA</dt><dd>Điểm tổng hợp: vừa tìm xe, vừa giữ liên kết/ID qua thời gian.</dd></div><div><dt>Frame evidence</dt><dd>Luôn quay về frame trước–trong–sau occlusion để kiểm chứng lý do.</dd></div></dl></div>
+      <aside class="reid-boundary"><strong>Vì sao chạy hai tracker?</strong><p><b>ByteTrack control</b> là mốc nền: motion + IoU. <b>BoT-SORT + ReID treatment</b> thêm appearance. Ta xem hệ thống nào xử lý clip này tốt hơn, không tìm “đáp án model”. Hai tracker khác implementation, vì vậy không được nói ReID một mình gây ra mọi chênh lệch metric.</p><a href="docs/day3-reid-theory.md">Đọc sâu hơn: ReID, embedding, threshold và failure mode →</a></aside>
+
+    </section>
+
+    <section class="notebook-section section-pad" id="notebook" aria-labelledby="notebook-title">
+      <div class="section-heading wide-heading"><p class="section-code">195–225 PHÚT · NOTEBOOK THẬT</p><h2 id="notebook-title">Mở, chạy, kiểm output.</h2><p>Notebook có cell tuần tự. Học viên chỉ cấu hình đường dẫn rồi chạy, không phải viết pipeline.</p></div>
+      <div class="section-actions"><a class="button button-primary" href="notebooks/day3_tracking_yolo_bytetrack.ipynb">Mở file notebook</a><a class="button button-secondary" href="https://colab.research.google.com/">Mở Google Colab</a></div>
+      <ol class="notebook-steps"><li><b>01 · Upload</b><div><p>Colab → File → Upload notebook → chọn file notebook từ repo.</p><span>Đọc <a href="docs/day3-reid-theory.md">ReID theory</a>; không copy cell rời sang notebook mới.</span></div></li><li><b>02 · Runtime</b><div><p>Runtime → Change runtime type → T4 GPU nếu còn quota. Không có GPU thì giữ CPU.</p><span>Config phải ghi device thực tế.</span></div></li><li><b>03 · Repo</b><div><p>Cell 3: sửa <code>REPO_URL</code> thành learner repo mà Colab đọc được.</p><span>PASS khi in <code>ROOT = .../Day3-Lab</code>. Không dán token vào cell.</span></div></li><li><b>04 · Package</b><div><p>Cell 4 cài <code>ultralytics==8.4.145</code> và <code>lap==0.5.13</code>.</p><span>Nếu restart, chạy lại từ cell 3.</span></div></li><li><b>05 · Data</b><div><p>Cell 6 phải thấy 190 frame. Nhãn của bạn vào <code>annotations/clip_01/gt.txt</code>; reference từ coach vào <code>gold/clip_01/gt.txt</code>.</p><span>Thiếu reference: hai tracker vẫn chạy, metric với reference skip.</span></div></li><li><b>06 · Two runs</b><div><p>Chạy cell config: ByteTrack control, rồi BoT-SORT + ReID với cùng detector input.</p><span>PASS có <code>model_bytetrack...</code>, <code>model_reid...</code> và config.</span></div></li><li><b>07 · Evidence</b><div><p>Chạy cell evaluation/chart/worst frames theo thứ tự.</p><span>Đọc IDF1, AssA, IDSW trước; không coi model nào là gold.</span></div></li><li><b>08 · Tải output</b><div><p>Đưa file từ <code>outputs/</code> về repo local rồi chạy submission check.</p><span>Stretch chỉ sau core; giữ <code>RUN_EXPERIMENT=False</code> nếu chưa xong.</span></div></li></ol>
+      <div class="notebook-proof"><figure class="actual-shot"><a href="#image-notebook-model" aria-haspopup="dialog"><img src="assets/guide/notebook-v2-metrics-actual.png" alt="Biểu đồ metric do notebook thật sinh ra sau YOLO26n và ByteTrack trên 190 frame" width="889" height="440" loading="lazy"></a><figcaption><span>ACTUAL CONTROL OUTPUT</span><strong>190/190 frame · baseline evidence</strong></figcaption></figure><article><p class="section-code">TWO-RUN SYSTEM COMPARISON · SAME DETECTOR INPUT</p><h3>Control rồi mới treatment</h3><p>Ảnh là evidence baseline thật. Notebook chạy ByteTrack và BoT-SORT + ReID riêng, rồi yêu cầu frame/ID giải thích thay vì hứa treatment luôn thắng.</p><dl><div><dt>Control</dt><dd>YOLO26n + ByteTrack · motion + IoU</dd></div><div><dt>Treatment</dt><dd>YOLO26n + BoT-SORT · motion + IoU + appearance</dd></div><div><dt>Đọc trước</dt><dd>IDF1 · AssA · IDSW</dd></div><div><dt>Ràng buộc</dt><dd>Không train/tune theo gold · model không là đáp án</dd></div></dl><p class="asset-note">Giữ clip, weights, conf, IoU, imgsz và classes. ByteTrack/BOT-SORT khác implementation, nên đây không cô lập ReID là nguyên nhân.</p></article></div>
+
+    </section>
+
+    <section class="recovery-section section-pad" id="recovery" aria-labelledby="recovery-title">
+      <div class="section-heading wide-heading"><p class="section-code">RECOVERY NHANH</p><h2 id="recovery-title">Triệu chứng → hành động.</h2><p>Giữ nguyên thông báo lỗi khi báo coach. Không tự sửa MOT bằng tay để qua validator.</p></div>
+      <div class="recovery-table-wrap"><table class="recovery-table"><thead><tr><th>Triệu chứng</th><th>Kiểm nhanh</th><th>Cách hồi phục</th></tr></thead><tbody><tr><td>CVAT không mở</td><td>Đúng URL? Local Docker đang chạy?</td><td>Mở <a href="CVAT_SETUP.md">CVAT setup</a>; dùng fallback coach công bố.</td></tr><tr><td>RECTANGLE SHAPE</td><td>Đã bấm Shape.</td><td>Xóa shape, vẽ lại Rectangle → Track.</td></tr><tr><td>Ảnh bị pan</td><td>Bbox chưa active.</td><td>Click trực tiếp bbox, thấy handle rồi kéo.</td></tr><tr><td>Reload mất nhãn</td><td>Ctrl+S không nhận focus.</td><td>Dùng Save icon; nếu mất, dừng và báo task/job ID.</td></tr><tr><td>Không có gt/gt.txt</td><td>Export nhầm format.</td><td>Task → Actions → Export task dataset → MOT 1.1.</td></tr><tr><td>Validator báo frame 0</td><td>CVAT là 0-based, MOT là 1-based.</td><td>Export lại MOT 1.1; không cộng tay frame.</td></tr><tr><td>IDF1 thấp, MOTA cao</td><td>Lỗi identity bị MOTA phạt nhẹ.</td><td>Soi ID switch/fragmentation; merge/sửa identity.</td></tr><tr><td>Notebook không thấy repo</td><td>Cell 3 chưa in ROOT.</td><td>Sửa REPO_URL hoặc upload thư mục Day3-Lab, chạy lại cell 3.</td></tr><tr><td>Restart/thiếu package</td><td>Cell 4 chưa in đúng version.</td><td>Run install, restart nếu được yêu cầu, chạy lại cell 3.</td></tr><tr><td>Không GPU</td><td>Config ghi device: cpu.</td><td>Tiếp tục CPU, giữ imgsz; GPU không là điều kiện core.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="submit-section section-pad" id="submit" aria-labelledby="submit-title">
+      <div class="section-heading wide-heading"><p class="section-code">225–240 PHÚT</p><h2 id="submit-title">Nộp đủ dấu vết trước/sau.</h2><p>Đánh dấu sau khi file tồn tại và không còn placeholder.</p></div>
+      <div class="submission-grid"><div class="submission-checks"><label><input type="checkbox"> <code>annotations/clip_01/gt.txt</code> và <code>clip_02/gt.txt</code></label><label><input type="checkbox"> pre-gold <code>gt.txt</code> + <code>manifest.json</code></label><label><input type="checkbox"> <code>GUIDELINE_MINI.md</code> có 3 ca mơ hồ</label><label><input type="checkbox"> <code>reports/review_partner.md</code> có finding + closure + checklist</label><label><input type="checkbox"> <code>outputs/eval_vs_gold.json</code> và metric trước/sau trong report</label><label><input type="checkbox"> ByteTrack MOT + ReID MOT + run config + three model JSON</label><label><input type="checkbox"> report nói rõ treatment tốt hơn/tệ hơn/không đổi, kèm frame + ID evidence; không quy khác biệt chỉ cho ReID</label><label><input type="checkbox"> <code>reports/REPORT.md</code> không còn <code>...</code></label><label><input type="checkbox"> Không commit <code>gold/</code>, <code>*.pt</code>, <code>outputs/vis_*</code></label></div><aside class="submission-actions"><h3>Mở artifact</h3><a href="docs/day3-reid-theory.md">ReID theory</a><a href="reports/REPORT_TEMPLATE.md">Report template</a><a href="reports/REVIEW_PARTNER_TEMPLATE.md">Reviewer checklist</a><a href="RUBRIC.md">Rubric</a><a href="#submission-checklist">Lệnh kiểm submission</a><p>Deliverable cốt lõi: MOT 1.1, lỗi peer theo frame/ID/fix, checklist đã điền.</p></aside></div>
+    </section>
+
+
+  </main>
+
+  <section class="lightbox" id="image-cvat-create" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-create-title"><a class="lightbox-backdrop" href="#cvat-create" aria-label="Đóng ảnh và quay lại bước tạo task"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-create-title">CVAT thật · tạo task</strong><a href="#cvat-create">← Quay lại bước 01</a></div><img src="assets/guide/cvat-v2-create-task-actual.png" alt="CVAT tạo task và label vehicle"></figure></section>
+  <section class="lightbox" id="image-cvat-task" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-task-title"><a class="lightbox-backdrop" href="#cvat-verify-task" aria-label="Đóng ảnh và quay lại kiểm task"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-task-title">CVAT thật · task 60 frame</strong><a href="#cvat-verify-task">← Quay lại bước 02</a></div><img src="assets/guide/cvat-v2-task-60frames-actual.png" alt="Task có vehicle và 60 frame"></figure></section>
+  <section class="lightbox" id="image-cvat-track" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-track-title"><a class="lightbox-backdrop" href="#cvat-track" aria-label="Đóng ảnh và quay lại Track"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-track-title">CVAT thật · Track khác Shape</strong><a href="#cvat-track">← Quay lại bước 03</a></div><img src="assets/guide/cvat-v2-track-vs-shape-actual.png" alt="Menu Rectangle có Shape và Track"></figure></section>
+  <section class="lightbox" id="image-cvat-keyframe" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-keyframe-title"><a class="lightbox-backdrop" href="#cvat-keyframe" aria-label="Đóng ảnh và quay lại keyframe"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-keyframe-title">CVAT thật · keyframe frame 31</strong><a href="#cvat-keyframe">← Quay lại bước 04</a></div><img src="assets/guide/cvat-v2-keyframe-controls-actual.png" alt="Frame 31 có ID 1 selected và keyframe"></figure></section>
+  <section class="lightbox" id="image-cvat-occluded" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-occluded-title"><a class="lightbox-backdrop" href="#cvat-occluded" aria-label="Đóng ảnh và quay lại Occluded"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-occluded-title">CVAT thật · Occluded</strong><a href="#cvat-occluded">← Quay lại bước 05</a></div><img src="assets/guide/cvat-v2-occluded-toggle-actual.png" alt="Tooltip Switch occluded property"></figure></section>
+  <section class="lightbox" id="image-cvat-outside" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-outside-title"><a class="lightbox-backdrop" href="#cvat-outside" aria-label="Đóng ảnh và quay lại Outside"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-outside-title">CVAT thật · Outside</strong><a href="#cvat-outside">← Quay lại bước 06</a></div><img src="assets/guide/cvat-v2-outside-toggle-actual.png" alt="Tooltip Switch outside property"></figure></section>
+  <section class="lightbox" id="image-cvat-save" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-save-title"><a class="lightbox-backdrop" href="#cvat-save" aria-label="Đóng ảnh và quay lại Save"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-save-title">CVAT thật · Save</strong><a href="#cvat-save">← Quay lại bước 07</a></div><img src="assets/guide/cvat-v2-save-success-actual.png" alt="Tooltip Save current changes"></figure></section>
+  <section class="lightbox" id="image-cvat-export" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-export-title"><a class="lightbox-backdrop" href="#cvat-export" aria-label="Đóng ảnh và quay lại export"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-export-title">CVAT thật · MOT 1.1</strong><a href="#cvat-export">← Quay lại bước 08</a></div><img src="assets/guide/cvat-v2-export-mot-actual.png" alt="Dialog export chọn MOT 1.1"></figure></section>
+  <section class="lightbox" id="image-cvat-finished" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-cvat-finished-title"><a class="lightbox-backdrop" href="#cvat-export" aria-label="Đóng ảnh và quay lại export"></a><figure><div class="lightbox-toolbar"><strong id="image-cvat-finished-title">CVAT thật · Finished</strong><a href="#cvat-export">← Quay lại bước 08</a></div><img src="assets/guide/cvat-v2-export-finished-actual.png" alt="Requests báo Finished 100 phần trăm"></figure></section>
+  <section class="lightbox" id="image-notebook-model" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="image-notebook-model-title"><a class="lightbox-backdrop" href="#notebook" aria-label="Đóng ảnh và quay lại notebook"></a><figure><div class="lightbox-toolbar"><strong id="image-notebook-model-title">Notebook thật · model metrics</strong><a href="#notebook">← Quay lại notebook</a></div><img src="assets/guide/notebook-v2-metrics-actual.png" alt="Metric HOTA, DetA, AssA, LocA, IDF1, MOTA và MOTP"></figure></section>
+
+  <footer class="site-footer"><div><strong>DAY 03 · E2E PILOT</strong><p>Starter-aligned · repo private · guide không chứa raw teaching reference.</p></div><nav>
+    <a href="#top">Về đầu trang</a>
+
+  </nav></footer>
+</body>
+</html>
